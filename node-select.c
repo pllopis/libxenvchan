@@ -36,7 +36,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#include <xen/io/libvchan.h>
+#include "libvchan.h"
 
 void usage(char** argv)
 {

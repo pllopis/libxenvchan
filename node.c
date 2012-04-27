@@ -35,7 +35,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#include <xen/io/libvchan.h>
+#include "libvchan.h"
 
 int libvchan_write_all(struct libvchan *ctrl, char *buf, int size)
 {

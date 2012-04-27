@@ -38,7 +38,7 @@
 #include <unistd.h>
 
 #include <xenctrl.h>
-#include <xen/io/libvchan.h>
+#include "libvchan.h"
 
 #ifndef PAGE_SHIFT
 #define PAGE_SHIFT 12

@@ -43,7 +43,7 @@
 #include <xen/sys/evtchn.h>
 #include <xen/sys/gntalloc.h>
 #include <xen/sys/gntdev.h>
-#include <xen/io/libvchan.h>
+#include "libvchan.h"
 
 #ifndef PAGE_SHIFT
 #define PAGE_SHIFT 12
