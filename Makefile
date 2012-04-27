@@ -21,35 +21,35 @@ CFLAGS += -I../include -I. -fPIC
 all: libvchan.so vchan-node1 vchan-node2 libvchan.a
 
 libvchan.so: libvchan.so.$(MAJOR)
-   ln -sf $< $@
+	ln -sf $< $@
 
 libvchan.so.$(MAJOR): libvchan.so.$(MAJOR).$(MINOR)
-   ln -sf $< $@
+	ln -sf $< $@
 
 libvchan.so.$(MAJOR).$(MINOR): $(LIBVCHAN_OBJS)
-   $(CC) $(LDFLAGS) -Wl,$(SONAME_LDFLAG) -Wl,libvchan.so.$(MAJOR) $(SHLIB_LDFLAGS) -o $@ $^ $(LIBVCHAN_LIBS)
+	$(CC) $(LDFLAGS) -Wl,$(SONAME_LDFLAG) -Wl,libvchan.so.$(MAJOR) $(SHLIB_LDFLAGS) -o $@ $^ $(LIBVCHAN_LIBS)
 
 libvchan.a: $(LIBVCHAN_OBJS)
-   $(AR) rcs libvchan.a $^
+	$(AR) rcs libvchan.a $^
 
 vchan-node1: $(NODE_OBJS) libvchan.so
-   $(CC) $(LDFLAGS) -o $@ $(NODE_OBJS) libvchan.so $(LDLIBS_libvchan)
+	$(CC) $(LDFLAGS) -o $@ $(NODE_OBJS) libvchan.so $(LDLIBS_libvchan)
 
 vchan-node2: $(NODE2_OBJS) libvchan.so
-   $(CC) $(LDFLAGS) -o $@ $(NODE2_OBJS) libvchan.so $(LDLIBS_libvchan)
+	$(CC) $(LDFLAGS) -o $@ $(NODE2_OBJS) libvchan.so $(LDLIBS_libvchan)
 
 .PHONY: install
 install: all
-   $(INSTALL_DIR) $(DESTDIR)$(LIBDIR)
-   $(INSTALL_DIR) $(DESTDIR)$(INCLUDEDIR)
-   $(INSTALL_PROG) libvchan.so.$(MAJOR).$(MINOR) $(DESTDIR)$(LIBDIR)
-   ln -sf libvchan.so.$(MAJOR).$(MINOR) $(DESTDIR)$(LIBDIR)/libvchan.so.$(MAJOR)
-   ln -sf libvchan.so.$(MAJOR) $(DESTDIR)$(LIBDIR)/libvchan.so
-   $(INSTALL_DATA) libvchan.a $(DESTDIR)$(LIBDIR)
+	$(INSTALL_DIR) $(DESTDIR)$(LIBDIR)
+	$(INSTALL_DIR) $(DESTDIR)$(INCLUDEDIR)
+	$(INSTALL_PROG) libvchan.so.$(MAJOR).$(MINOR) $(DESTDIR)$(LIBDIR)
+	ln -sf libvchan.so.$(MAJOR).$(MINOR) $(DESTDIR)$(LIBDIR)/libvchan.so.$(MAJOR)
+	ln -sf libvchan.so.$(MAJOR) $(DESTDIR)$(LIBDIR)/libvchan.so
+	$(INSTALL_DATA) libvchan.a $(DESTDIR)$(LIBDIR)
 
 .PHONY: clean
 clean:
-   $(RM) -f *.o *.so* *.a vchan-node1 vchan-node2 $(DEPS)
+	$(RM) -f *.o *.so* *.a vchan-node1 vchan-node2 $(DEPS)
 
 distclean: clean
 
