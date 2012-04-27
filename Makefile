@@ -18,7 +18,7 @@ MINOR = 0
 CFLAGS += -I../include -I. -fPIC
 
 .PHONY: all
-all: libvchan.so vchan-node1 vchan-node2 libvchan.a
+all: libvchan.so vchan-node1 vchan-node2 libvchan.a bw
 
 libvchan.so: libvchan.so.$(MAJOR)
 	ln -sf $< $@
@@ -37,6 +37,9 @@ vchan-node1: $(NODE_OBJS) libvchan.so
 
 vchan-node2: $(NODE2_OBJS) libvchan.so
 	$(CC) $(LDFLAGS) -o $@ $(NODE2_OBJS) libvchan.so $(LDLIBS_libvchan)
+
+bw: bw.o libvchan.so
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS_libvchan)
 
 .PHONY: install
 install: all
