@@ -18,10 +18,9 @@
 #define DEBUG       0
 #define Printf(fmt, ...)   if(DEBUG) printf(fmt, ##__VA_ARGS__)
 
-#define BUFSIZE 65536
 char *buf;
-unsigned long long total_size = (double)134217728*2;
-int blocksize = BUFSIZE;
+unsigned long long total_size;
+int blocksize;
 
 inline double BW(unsigned long long bytes, long usec) {
     double bw;
