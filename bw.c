@@ -120,7 +120,7 @@ int main(int argc, char **argv)
             exit(1);
        }
 
-       printf("Running bandwidth test with domains %d on port %d, blocksize %d transfer_size %llu\n",
+       printf("Running bandwidth test with domain %d on port %d, blocksize %d transfer_size %llu\n",
               atoi(argv[3]), atoi(argv[4]), blocksize, total_size);
 
        if (!strcmp(argv[1], "server")) {
