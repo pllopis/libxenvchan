@@ -141,7 +141,7 @@ static int init_gnt_srv(struct libvchan *ctrl)
        if (area == MAP_FAILED)
            goto out_unmap_left;
        ctrl->write.buffer = area;
-       memcpy(ctrl->ring->grants + (pages_left * sizeof(uint32_t)),
+       memcpy(ctrl->ring->grants + pages_left,
               gref_info->gref_ids, pages_right * sizeof(uint32_t));
    }
 
