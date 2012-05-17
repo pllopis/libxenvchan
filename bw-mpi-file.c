@@ -108,7 +108,6 @@ void bw()
                        exit(1);
                }
                read_size += size;
-               //printf("%lld/%lld\n", read_size, total_size);
        }
        gettimeofday(&tv1, NULL);
        fsync(f);
