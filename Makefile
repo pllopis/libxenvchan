@@ -17,8 +17,10 @@ MINOR = 0
 
 CFLAGS += -g -I../include -I. -fPIC
 
+MPICC = mpicc
+
 .PHONY: all
-all: libvchan.so vchan-node1 vchan-node2 libvchan.a bw bw-file
+all: libvchan.so vchan-node1 vchan-node2 libvchan.a bw bw-file bw-gnt-mpi-file
 
 libvchan.so: libvchan.so.$(MAJOR)
 	ln -sf $< $@
@@ -47,6 +49,9 @@ bw: bw.o libvchan.a
 bw-file: bw-file.o libvchan.a
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBVCHAN_LIBS)
 
+bw-gnt-mpi-file: bw-gnt-mpi-file.c libvchan.a
+	$(MPICC) $(LDFLAGS) -o $@ $^ $(LIBVCHAN_LIBS)
+
 .PHONY: install
 install: all
 	$(INSTALL_DIR) $(DESTDIR)$(LIBDIR)
@@ -58,6 +63,7 @@ install: all
 	$(INSTALL_DATA) libvchan.a /home/pllopis/src/gvirtus/util
 	$(INSTALL_PROG) bw /home/pllopis/src/gnt
 	$(INSTALL_PROG) bw-file /home/pllopis/src/gnt
+	$(INSTALL_PROG) bw-gnt-mpi-file /home/pllopis/src/gnt
 
 .PHONY: clean
 clean:
