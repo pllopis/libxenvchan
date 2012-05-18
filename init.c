@@ -304,14 +304,14 @@ static int init_xs_srv(struct libvchan *ctrl, int ring_ref)
    perms[1].perms = XS_PERM_READ;
 
    snprintf(ref, sizeof ref, "%d", ring_ref);
-   snprintf(buf, sizeof buf, "data/vchan/%d/ring-ref", ctrl->device_number);
+   snprintf(buf, sizeof buf, "/local/domain/%d/data/vchan/%d/ring-ref", ctrl->other_domain_id, ctrl->device_number);
    if (!xs_write(xs, 0, buf, ref, strlen(ref)))
        goto fail_xs_open;
    if (!xs_set_permissions(xs, 0, buf, perms, 2))
        goto fail_xs_open;
 
    snprintf(ref, sizeof ref, "%d", ctrl->event_port);
-   snprintf(buf, sizeof buf, "data/vchan/%d/event-channel", ctrl->device_number);
+   snprintf(buf, sizeof buf, "/local/domain/%d/data/vchan/%d/event-channel", ctrl->other_domain_id, ctrl->device_number);
    if (!xs_write(xs, 0, buf, ref, strlen(ref)))
        goto fail_xs_open;
    if (!xs_set_permissions(xs, 0, buf, perms, 2))
@@ -423,8 +423,7 @@ struct libvchan *libvchan_client_init(int domain, int devno)
        goto fail;
 
 // find xenstore entry
-   snprintf(buf, sizeof buf, "/local/domain/%d/data/vchan/%d/ring-ref",
-       ctrl->other_domain_id, ctrl->device_number);
+   snprintf(buf, sizeof buf, "data/vchan/%d/ring-ref", ctrl->device_number);
    ref = xs_read(xs, 0, buf, &len);
    if (!ref)
        goto fail;
@@ -432,8 +431,7 @@ struct libvchan *libvchan_client_init(int domain, int devno)
    free(ref);
    if (!ring_ref)
        goto fail;
-   snprintf(buf, sizeof buf, "/local/domain/%d/data/vchan/%d/event-channel",
-       ctrl->other_domain_id, ctrl->device_number);
+   snprintf(buf, sizeof buf, "data/vchan/%d/event-channel", ctrl->device_number);
    ref = xs_read(xs, 0, buf, &len);
    if (!ref)
        goto fail;
