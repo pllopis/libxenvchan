@@ -19,6 +19,7 @@
 #define Printf(fmt, ...)   if(DEBUG) printf(fmt, ##__VA_ARGS__)
 
 char *buf;
+char *buf1, *buf2, *buf3, *buf4;
 unsigned long long total_size;
 int blocksize;
 
@@ -83,8 +84,8 @@ void hex_dump(char *data, int size, char *caption)
 void usage(char** argv)
 {
        fprintf(stderr, "usage:\n"
-               "%s client [read|write] domid nodeid blocksize transfer_size\n"
-               "%s server [read|write] domid nodeid blocksize transfer_size read_buffer_size write_buffer_size\n", argv[0], argv[0]);
+               "%s client [read|write] domid evt-port blocksize transfer_size\n"
+               "%s server [read|write] domid evt-port blocksize transfer_size read_buffer_size write_buffer_size\n", argv[0], argv[0]);
        exit(1);
 }
 
@@ -94,7 +95,8 @@ inline int send_blocking(struct libvchan *ctrl, void *msg, size_t size)
     int ret;
 
     while (sz < size) {
-        ret = libvchan_send(ctrl, msg, size - sz);
+        ret = libvchan_write(ctrl, msg, size - sz);
+        //ret = libvchan_send(ctrl, msg, size - sz);
         sz += ret;
     }
 
@@ -107,71 +109,13 @@ inline int recv_blocking(struct libvchan *ctrl, void *msg, size_t size)
     int ret;
 
     while (sz < size) {
-        ret = libvchan_recv(ctrl, msg, size - sz);
-        //if (ret < (size-sz))
-        //    printf("read %lu expected %lu\n", ret, size-sz);
+        ret = libvchan_read(ctrl, msg, size - sz);
+        //ret = libvchan_recv(ctrl, msg, size - sz);
         sz += ret;
     }
 
     return sz;
 }
-
-void simul_open_reader(struct libvchan *ctrl)
-{
-    recv_blocking(ctrl, buf, 8);
-    recv_blocking(ctrl, buf, 5);
-    recv_blocking(ctrl, buf, 8);
-    recv_blocking(ctrl, buf, 8);
-    recv_blocking(ctrl, buf, 5);
-    recv_blocking(ctrl, buf, 4);
-    recv_blocking(ctrl, buf, 4);
-    recv_blocking(ctrl, buf, 4);
-}
-
-void simul_open_writer(struct libvchan *ctrl)
-{
-    send_blocking(ctrl, buf, 8);
-    send_blocking(ctrl, buf, 5);
-    send_blocking(ctrl, buf, 8);
-    send_blocking(ctrl, buf, 8);
-    send_blocking(ctrl, buf, 5);
-    send_blocking(ctrl, buf, 4);
-    send_blocking(ctrl, buf, 4);
-    send_blocking(ctrl, buf, 4);
-}
-
-void simul_fsync_reader(struct libvchan *ctrl)
-{
-    send_blocking(ctrl, buf, 8);
-    send_blocking(ctrl, buf, 6);
-    send_blocking(ctrl, buf, 8);
-    send_blocking(ctrl, buf, 4);
-}
-
-void simul_fsync_writer(struct libvchan *ctrl)
-{
-    recv_blocking(ctrl, buf, 8);
-    recv_blocking(ctrl, buf, 6);
-    recv_blocking(ctrl, buf, 8);
-    recv_blocking(ctrl, buf, 4);
-}
-
-void simul_close_reader(struct libvchan *ctrl)
-{
-    recv_blocking(ctrl, buf, 8);
-    recv_blocking(ctrl, buf, 6);
-    recv_blocking(ctrl, buf, 8);
-    recv_blocking(ctrl, buf, 4);
-}
-
-void simul_close_writer(struct libvchan *ctrl)
-{
-    send_blocking(ctrl, buf, 8);
-    send_blocking(ctrl, buf, 6);
-    send_blocking(ctrl, buf, 8);
-    send_blocking(ctrl, buf, 4);
-}
-
 
 void reader(struct libvchan *ctrl)
 {
@@ -179,56 +123,53 @@ void reader(struct libvchan *ctrl)
        int size, sz;
        struct timeval tv1, tv2;
        long t = 0, t1, t2;
-       int f = open("b", O_WRONLY | O_CREAT, 0);
+       int i;
 
-       simul_open_reader(ctrl);
-
+       //int f = open("b", O_WRONLY | O_CREAT, 0);
        while (read_size < total_size) {
                size = read_size + blocksize > total_size ? total_size - read_size : blocksize;
 
+               gettimeofday(&tv1, NULL);
                /*recv_blocking(ctrl, buf, 8);
-               recv_blocking(ctrl, buf, 8);
                recv_blocking(ctrl, buf, 6);
-               recv_blocking(ctrl, buf, 4);
-               size = recv_blocking(ctrl, buf, size);
-               recv_blocking(ctrl, buf, 8);
-               send_blocking(ctrl, buf, 8);
-               send_blocking(ctrl, buf, 8);*/
-               //recv_blocking(ctrl, buf, 43);
-               recv_blocking(ctrl, buf, 8);
-               recv_blocking(ctrl, buf, 6);
-               recv_blocking(ctrl, buf, 8);
+               recv_blocking(ctrl, buf1, 4);*/
+               //recv_blocking(ctrl, buf2, 43);
+               recv_blocking(ctrl, buf2, 8);
+               recv_blocking(ctrl, buf2, 6);
+               recv_blocking(ctrl, buf2, 8);
+               //libvchan_read(ctrl, buf1, 4);
+               //libvchan_read(ctrl, buf2, 8);
                size = recv_blocking(ctrl, buf, size+21);
-
+               //size = libvchan_read(ctrl, buf, size);
+               //libvchan_read(ctrl, buf3, 8);
+               send_blocking(ctrl, buf3, 12);
+               //send_blocking(ctrl, buf4, 8);
+               //send_blocking(ctrl, buf1, 8);
+               //libvchan_send(ctrl, buf4, 16);
+               //libvchan_send(ctrl, buf1, 8);
                if (size < 0) {
                        perror("read vchan");
                        libvchan_close(ctrl);
                        exit(1);
                }
-               if (size > 0) {
-               //gettimeofday(&tv1, NULL);
+               /*if (size > 0) {
                   sz = write(f, buf, size);
-               //gettimeofday(&tv2, NULL);
                   wr_size += sz;
                   if (sz != size)
                     printf("write fail: requested %d wrote %d\n", size, sz);
-
-               //t1 = tv1.tv_sec*1000000 + tv1.tv_usec;
-               //t2 = tv2.tv_sec*1000000 + tv2.tv_usec;
-               //t += (t2 - t1);
-               //printf("written %lu in %ld usec\n", size, t);
-               }
-               send_blocking(ctrl, buf, 12);
+               }*/
+               gettimeofday(&tv2, NULL);
+               t1 = tv1.tv_sec*1000000 + tv1.tv_usec;
+               t2 = tv2.tv_sec*1000000 + tv2.tv_usec;
+               t += (t2 - t1);
 
                read_size += size;
                //printf("%lld/%lld\n", read_size, total_size);
        }
-       fsync(f);
-       //memcpy(buf, "0123456789\0", 11);
-       //libvchan_send(ctrl, buf, 11);
-       simul_fsync_reader(ctrl);
+       /*fsync(f);
        close(f);
-       simul_close_reader(ctrl);
+       memcpy(buf, "0123456789\0", 11);
+       libvchan_send(ctrl, buf, 11);*/
        printf("BW: %.3f MB/s (%llu bytes in %ld usec), Size: %.2fMB, time: %.3fsec\n", BW(read_size,t), read_size, t, ((double)read_size/(1024*1024)), ((double)t/1000000));
 }
 
@@ -238,33 +179,32 @@ void writer(struct libvchan *ctrl)
        unsigned long long write_size = 0, wr_size = 0;
        struct timeval tv1, tv2;
        long t = 0, t1, t2;
-       int f = open("a", O_RDONLY);
-       lseek(f, 0, SEEK_SET);
-
-       simul_open_writer(ctrl);
-
+       int i;
+       //int f = open("a", O_RDONLY);
+       //lseek(f, 0, SEEK_SET);
        while (write_size < total_size) {
                size = write_size + blocksize > total_size ? total_size - write_size : blocksize;
-               sz = read(f, buf, size);
+               /*sz = read(f, buf, size);
                wr_size += sz;
                if (sz != size) {
                    perror("file read");
                    printf("read fail: requested %d read %d at offset %ld\n", size, sz, lseek(f, 0, SEEK_CUR));
                    exit(1);
-               }
+               }*/
                gettimeofday(&tv1, NULL);
                /*send_blocking(ctrl, buf, 8);
-               send_blocking(ctrl, buf, 8);
                send_blocking(ctrl, buf, 6);
-               send_blocking(ctrl, buf, 4);
-               size = send_blocking(ctrl, buf, sz);
-               send_blocking(ctrl, buf, 8);
-               recv_blocking(ctrl, buf, 8);
-               recv_blocking(ctrl, buf, 8);*/
-               send_blocking(ctrl, buf, 43);
+               send_blocking(ctrl, buf1, 4);*/
+               send_blocking(ctrl, buf2, 43);
+               //libvchan_write(ctrl, buf1, 4);
+               //libvchan_write(ctrl, buf2, 8);
                size = send_blocking(ctrl, buf, size);
-               recv_blocking(ctrl, buf, 12);
-
+               //size = libvchan_write(ctrl, buf, size);
+               //libvchan_write(ctrl, buf3, 8);
+               //send_blocking(ctrl, buf3, 8);
+               recv_blocking(ctrl, buf4, 12);
+               //libvchan_recv(ctrl, buf4, 16);
+               //libvchan_recv(ctrl, buf1, 8);
                gettimeofday(&tv2, NULL);
                t1 = tv1.tv_sec*1000000 + tv1.tv_usec;
                t2 = tv2.tv_sec*1000000 + tv2.tv_usec;
@@ -280,17 +220,13 @@ void writer(struct libvchan *ctrl)
                //printf("wr_size %llu write_size %llu total_size %llu\n", wr_size, write_size, total_size);
        }
        
-       gettimeofday(&tv1, NULL);
-       simul_fsync_writer(ctrl);
-       //size = recv_blocking(ctrl, buf, 11);
+       /*gettimeofday(&tv1, NULL);
+       size = recv_blocking(ctrl, buf, 11);
        gettimeofday(&tv2, NULL);
-       //if (buf[0] != '0') printf("recv fail\n");
        t1 = tv1.tv_sec*1000000 + tv1.tv_usec;
        t2 = tv2.tv_sec*1000000 + tv2.tv_usec;
        t += (t2 - t1);
-
-       simul_close_writer(ctrl);
-       close(f);
+       close(f);*/
        printf("BW: %.3f MB/s (%llu bytes in %ld usec), Size: %.2fMB, time: %.3fsec\n", BW(write_size,t), write_size, t, ((double)write_size/(1024*1024)), ((double)t/1000000));
 }
 
@@ -319,6 +255,10 @@ int main(int argc, char **argv)
             perror("malloc");
             exit(1);
        }
+       buf1 = (char*) malloc(blocksize);
+       buf2 = (char*) malloc(blocksize);
+       buf3 = (char*) malloc(blocksize);
+       buf4 = (char*) malloc(blocksize);
 
        printf("Running bandwidth test with domain %d on port %d, blocksize %d transfer_size %llu\n",
               atoi(argv[3]), atoi(argv[4]), blocksize, total_size);
@@ -336,10 +276,18 @@ int main(int argc, char **argv)
                exit(1);
        }
 
+       int i;
+       for (i=0; i<1; i++) {
        if (wr)
                writer(ctrl);
        else
                reader(ctrl);
+       }
        libvchan_close(ctrl);
+       free(buf);
+       free(buf1);
+       free(buf2);
+       free(buf3);
+       free(buf4);
        return 0;
 }

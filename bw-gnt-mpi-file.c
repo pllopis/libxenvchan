@@ -97,7 +97,7 @@ inline int send_blocking(struct libvchan *ctrl, void *msg, size_t size)
     int ret;
 
     while (sz < size) {
-        ret = libvchan_send(ctrl, msg, size - sz);
+        ret = libvchan_write(ctrl, msg, size - sz);
         sz += ret;
     }
 
@@ -110,7 +110,7 @@ inline int recv_blocking(struct libvchan *ctrl, void *msg, size_t size)
     int ret;
 
     while (sz < size) {
-        ret = libvchan_recv(ctrl, msg, size - sz);
+        ret = libvchan_read(ctrl, msg, size - sz);
         sz += ret;
     }
 
@@ -123,28 +123,31 @@ void reader(struct libvchan *ctrl)
        int size, sz;
        struct timeval tv1, tv2;
        long t = 0, t1, t2;
-       char filename[5];
+       char filename[10];
 
        recv_blocking(ctrl, (int*)&rank, sizeof(rank));
-       snprintf(filename, 5, "b", rank);
-       //snprintf(filename, 5, "b-%02d", rank);
+       //snprintf(filename, 5, "b", rank);
+       snprintf(filename, 10, "/io/b-%02d", rank);
        printf("[%02d] writing file %s at %llu\n", rank, filename, (long long unsigned int)total_size*rank);
+       unlink(filename);
        int f = open(filename, O_RDWR | O_CREAT, 0666);
        if (f < 0) {
            perror("open");
        }
        int r;
-       if ((r = lseek(f, (off_t)rank*total_size, SEEK_SET)) < 0) {
+       /*if ((r = lseek(f, (off_t)rank*total_size, SEEK_SET)) < 0) {
            perror("lseek");
-
        }
        printf("starting at %ld, %d\n", (long int)lseek(f, 0, SEEK_CUR), r);
+       */
 
        while (read_size < total_size) {
                size = read_size + blocksize > total_size ? total_size - read_size : blocksize;
 
                gettimeofday(&tv1, NULL);
-               size = libvchan_recv(ctrl, buf, size);
+               recv_blocking(ctrl, buf, 8);
+               size = recv_blocking(ctrl, buf, 65536);
+               //size = libvchan_recv(ctrl, buf, size);
                if (size < 0) {
                        perror("read vchan");
                        libvchan_close(ctrl);
@@ -156,6 +159,7 @@ void reader(struct libvchan *ctrl)
                   if (sz != size)
                     printf("write fail: requested %d wrote %d\n", size, sz);
                }
+               send_blocking(ctrl, buf, 12);
                gettimeofday(&tv2, NULL);
                t1 = tv1.tv_sec*1000000 + tv1.tv_usec;
                t2 = tv2.tv_sec*1000000 + tv2.tv_usec;
@@ -192,7 +196,10 @@ void writer(struct libvchan *ctrl)
                    exit(1);
                }
                gettimeofday(&tv1, NULL);
-               size = send_blocking(ctrl, buf, sz);
+               send_blocking(ctrl, buf, 8);
+               size = send_blocking(ctrl, buf, 65536);
+               recv_blocking(ctrl, buf, 12);
+               //size = send_blocking(ctrl, buf, sz);
                gettimeofday(&tv2, NULL);
                t1 = tv1.tv_sec*1000000 + tv1.tv_usec;
                t2 = tv2.tv_sec*1000000 + tv2.tv_usec;

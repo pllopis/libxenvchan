@@ -173,12 +173,15 @@ static void* do_gnt_map(int fd, int domid, uint32_t* pages, size_t npages, uint6
    }
 
    rv = ioctl(fd, IOCTL_GNTDEV_MAP_GRANT_REF, gref_info);
-   if (rv)
+   if (rv) {
+       perror("ioctl");
        goto out;
+   }
    if (index)
        *index = gref_info->index;
    area = mmap(NULL, PAGE_SIZE * npages, PROT_READ | PROT_WRITE, MAP_SHARED, fd, gref_info->index);
    if (area == MAP_FAILED) {
+       perror("mmap");
        struct ioctl_gntdev_unmap_grant_ref undo = {
            .index = gref_info->index,
            .count = gref_info->count
@@ -202,8 +205,10 @@ static int init_gnt_cli(struct libvchan *ctrl, uint32_t ring_ref)
 
    ctrl->ring = do_gnt_map(ring_fd, ctrl->other_domain_id, &ring_ref, 1, &ring_index);
 
-   if (!ctrl->ring)
+   if (!ctrl->ring) {
+       perror("do_gnt_map");
        goto out;
+   }
 
    ctrl->write.order = ctrl->ring->left_order;
    ctrl->read.order = ctrl->ring->right_order;
@@ -425,28 +430,40 @@ struct libvchan *libvchan_client_init(int domain, int devno)
 // find xenstore entry
    snprintf(buf, sizeof buf, "data/vchan/%d/ring-ref", ctrl->device_number);
    ref = xs_read(xs, 0, buf, &len);
-   if (!ref)
+   if (!ref) {
+       perror("xs_read ring-ref");
        goto fail;
+   } 
    ring_ref = atoi(ref);
    free(ref);
-   if (!ring_ref)
+   if (!ring_ref) {
+       perror("atoi(ring-ref)");
        goto fail;
+   }
    snprintf(buf, sizeof buf, "data/vchan/%d/event-channel", ctrl->device_number);
    ref = xs_read(xs, 0, buf, &len);
-   if (!ref)
+   if (!ref) {
+       perror("xs_read event-channel");
        goto fail;
+   }
    ctrl->event_port = atoi(ref);
    free(ref);
-   if (!ctrl->event_port)
+   if (!ctrl->event_port) {
+       perror("atoi(event_port)");
        goto fail;
+   }
 
 // set up event channel
-   if (init_evt_cli(ctrl))
+   if (init_evt_cli(ctrl)) {
+       perror("init_evt_cli");
        goto fail;
+   }
 
 // set up shared page(s)
-   if (init_gnt_cli(ctrl, ring_ref))
+   if (init_gnt_cli(ctrl, ring_ref)) {
+       perror("init_gnt_cli");
        goto fail;
+   }
 
    ctrl->ring->cli_live = 1;
    ctrl->ring->debug = 0xabce;
