@@ -97,7 +97,7 @@ inline int send_blocking(struct libvchan *ctrl, void *msg, size_t size)
     int ret;
 
     while (sz < size) {
-        ret = libvchan_write(ctrl, msg, size - sz);
+        ret = libvchan_write(ctrl, msg + sz, size - sz);
         sz += ret;
     }
 
@@ -110,7 +110,7 @@ inline int recv_blocking(struct libvchan *ctrl, void *msg, size_t size)
     int ret;
 
     while (sz < size) {
-        ret = libvchan_read(ctrl, msg, size - sz);
+        ret = libvchan_read(ctrl, msg + sz, size - sz);
         sz += ret;
     }
 
